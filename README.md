@@ -6,6 +6,18 @@ prediction models.
 
 ------------------------------------------------------------------------
 
+## Authors
+
+Juan David Ramos López
+Master’s Student
+Universidad Nacional de Colombia
+
+Arles Ernesto Rodríguez Portela, PhD
+Thesis Director
+Universidad Nacional de Colombia
+
+------------------------------------------------------------------------
+
 ## Overview
 
 This repository implements a dependency-graph--based feature engineering
@@ -22,6 +34,8 @@ This repository accompanies the master's thesis:
 
 **Artificial Intelligence Model for Latency Prediction in Cloud-Deployed
 Microservice Architectures**
+
+
 
 ------------------------------------------------------------------------
 
