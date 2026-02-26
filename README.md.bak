@@ -39,6 +39,13 @@ Clusters.*\
 Companion of the 15th ACM/SPEC International Conference on Performance
 Engineering, pp. 67--71.
 
+### BibTeX
+
+@inproceedings{khodabandeh2024network, title={Network Analysis of
+Microservices: A Case Study on Alibaba Production Clusters},
+author={Khodabandeh, Ghazal and Ezaz, Alireza and Ezzati-Jivan, Naser},
+booktitle={Companion of the 15th ACM/SPEC International Conference on
+Performance Engineering}, pages={67--71}, year={2024} }
 
 The following files were adapted and extended from the original
 repository, with permission from the author:
