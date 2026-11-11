@@ -1,0 +1,330 @@
+diff --git a/LICENSE b/LICENSE
+new file mode 100644
+index 0000000..2af6b34
+--- /dev/null
++++ b/LICENSE
+@@ -0,0 +1,22 @@
++MIT License
++
++Copyright (c) 2026 Juan David Ramos López and Arles Ernesto Rodríguez Portela,
++Universidad Nacional de Colombia
++
++Permission is hereby granted, free of charge, to any person obtaining a copy
++of this software and associated documentation files (the "Software"), to deal
++in the Software without restriction, including without limitation the rights
++to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++copies of the Software, and to permit persons to whom the Software is
++furnished to do so, subject to the following conditions:
++
++The above copyright notice and this permission notice shall be included in all
++copies or substantial portions of the Software.
++
++THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
++AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
++SOFTWARE.
+diff --git a/NOTICE.md b/NOTICE.md
+new file mode 100644
+index 0000000..2cfa2c8
+--- /dev/null
++++ b/NOTICE.md
+@@ -0,0 +1,30 @@
++# Third-party notices
++
++## Derived code
++
++The following files were adapted and extended from the code released with:
++
++Khodabandeh, G., Ezaz, A., & Ezzati-Jivan, N. (2024). *Network Analysis of
++Microservices: A Case Study on Alibaba Production Clusters.* Companion of the
++15th ACM/SPEC International Conference on Performance Engineering, pp. 67-71.
++Repository: https://github.com/ghazalkhb/ICPE2024_DataChallenge
++
++- `01-Preprocessing/01-PreProcessing.py`
++- `01-Preprocessing/02-Services_new.py`
++- `01-Preprocessing/03-Louvain_new.py`
++
++Academic reuse of this code was authorized by the first author, G.
++Khodabandeh, by personal communication (LinkedIn message, 26 February), on
++the condition that the related paper is cited. The upstream repository does
++not declare a license, so these files are excluded from the MIT License in
++this repository: they are shared for academic and research reuse, as
++authorized, and keep the rights of their original authors. The MIT License
++applies only to the code written by this repository's authors.
++
++## Data
++
++This repository does not redistribute data. The pipeline expects the
++Alibaba Cluster Trace 2021 microservices traces (`MSCallGraph` and
++`MSResource` tables), available from
++https://github.com/alibaba/clusterdata/tree/master and subject to the terms
++published there.
+diff --git a/README.md b/README.md
+index 6d10194..ab9c8a5 100644
+--- a/README.md
++++ b/README.md
+@@ -8,71 +8,118 @@ prediction models.
+ 
+ ## Authors
+ 
+-Juan David Ramos López
+-Master’s Student
+-Universidad Nacional de Colombia
++Juan David Ramos López, Master's Student, Universidad Nacional de Colombia
+ 
+-Arles Ernesto Rodríguez Portela, PhD
+-Thesis Director
+-Universidad Nacional de Colombia
++Arles Ernesto Rodríguez Portela, PhD, Thesis Director, Departamento de
++Matemáticas, Facultad de Ciencias, Universidad Nacional de Colombia
+ 
+-------------------------------------------------------------------------
++## Project
++
++Developed within the research project *Modelado Computacional de Sistemas
++Complejos: Analizando el Impacto del Intercambio de Información en la Toma
++de Decisiones* (Hermes code 64022), Departamento de Matemáticas, Facultad de
++Ciencias, Universidad Nacional de Colombia (Bogotá). This repository is the
++open-source software deliverable of the project's microservices case study.
+ 
+ ## Overview
+ 
+-This repository implements a dependency-graph--based feature engineering
++This repository implements a dependency-graph-based feature engineering
+ pipeline for cloud-deployed microservice architectures. The framework
+-constructs service interaction graphs and extracts topology-aware
+-metrics (e.g., centrality measures and community detection) to enrich
+-telemetry data prior to latency prediction.
+-
+-The main contribution of this work is the integration of structural
+-dependency information into the preprocessing stage, enabling
+-graph-enriched latency modeling in distributed microservice systems.
+-
+-This repository accompanies the master's thesis:
+-
+-**Artificial Intelligence Model for Latency Prediction in Cloud-Deployed
+-Microservice Architectures**
+-
+-
+-
+-------------------------------------------------------------------------
++constructs per-request service interaction graphs and extracts
++topology-aware metrics (centrality measures, community detection and
++global graph metrics) to enrich telemetry data prior to latency
++prediction. Five supervised models (Linear Regression, Decision Tree,
++Random Forest, XGBoost and an LSTM) are compared with and without the
++structural features, and SHAP is used to interpret their contribution.
++
++It accompanies the master's thesis and the article:
++
++> Ramos-López, J., & Rodríguez, A. *Artificial Intelligence Model for
++> Latency Prediction in Cloud-Deployed Microservice Architectures.*
++> Submitted to Future Generation Computer Systems (2026).
++
++## Repository layout
++
++| Folder | Content |
++|---|---|
++| `01-Preprocessing/` | Merging of call-graph and resource tables, per-service graphs, Louvain communities and centrality metrics, final enriched dataset |
++| `02-Training/` | Training and evaluation of the tree-based/linear models and of the LSTM (`mae_train_models.py`, `train_lstm.py`) |
++| `03-Interpretability/` | SHAP analysis (`shap_analysis_c.py`, `lstm_shap_lstm.ipynb`) |
++
++## Data
++
++The data are **not** included. The pipeline uses the Alibaba Cluster Trace
++2021 microservices traces (`MSCallGraph_*.csv` and `MSResource_*.csv`):
++<https://github.com/alibaba/clusterdata/tree/master>.
++
++## Pipeline, in order
++
++1. `01-Preprocessing/00-FilterMatching.py`: joins call-graph and resource
++   files in parallel; writes `filtered_data_um.csv`.
++2. `01-Preprocessing/01-PreProcessing.py`: keeps and renames the columns
++   (`source`, `target`, `timestamp`, `service`, `traceid`, `rt`); writes
++   `filtered_data_um_sorted.csv`.
++3. `01-Preprocessing/02-Services_new.py`: splits the data into one CSV per
++   service (`services_new/<service>_output.csv`).
++4. `01-Preprocessing/03-Louvain_new.py`: builds each graph, takes its largest
++   connected component and computes betweenness, closeness, degree,
++   eigenvector, PageRank, eccentricity and Louvain community (seed 650), plus
++   global metrics (nodes, edges, density, clustering, average degree,
++   diameter, radius); writes `louvain_new/`.
++5. `01-Preprocessing/04-Parallel.py`: attaches the graph features to every
++   record in parallel; writes
++   `filtered_data_um_with_extra_columns_parallel.csv`.
++6. `02-Training/mae_train_models.py` and `02-Training/train_lstm.py`: train
++   and evaluate the models under the baseline (resource metrics) and the
++   enriched (resource + structural metrics) scenarios; split 80/20 with
++   `random_state=42`.
++7. `03-Interpretability/`: SHAP values for the trained models.
++
++## Setup
++
++```bash
++python -m venv .venv && source .venv/bin/activate
++pip install -r requirements.txt
++```
++
++The authors' notebook reports Python 3.11.5.
++
++## Known limitations
++
++- Input and output paths are hard-coded at the top of the scripts (absolute
++  Windows and Linux paths from the authors' machines, e.g. `D:\preprocess_sem_5\...`
++  or `/home/juan/...`). Edit them before running; moving them to a
++  configuration file or command-line arguments is pending.
++- Package versions are not pinned yet.
+ 
+ ## Acknowledgment
+ 
+-Parts of the preprocessing pipeline were adapted and extended from the
+-implementation developed in the context of the ACM/SPEC International
+-Conference on Performance Engineering (Companion), 2024.
+-
+-Associated publication:
++Parts of the preprocessing pipeline are derived from the code released with:
+ 
+-Khodabandeh, G., Ezaz, A., & Ezzati-Jivan, N. (2024).\
+-*Network Analysis of Microservices: A Case Study on Alibaba Production
+-Clusters.*\
+-Companion of the 15th ACM/SPEC International Conference on Performance
+-Engineering, pp. 67--71.
++Khodabandeh, G., Ezaz, A., & Ezzati-Jivan, N. (2024). *Network Analysis of
++Microservices: A Case Study on Alibaba Production Clusters.* Companion of the
++15th ACM/SPEC International Conference on Performance Engineering, pp. 67-71.
++Code: <https://github.com/ghazalkhb/ICPE2024_DataChallenge>
+ 
++The following files were adapted and extended from that repository. Academic
++reuse was authorized by the first author (G. Khodabandeh, personal
++communication via LinkedIn, 26 February) on the condition that the related
++paper is cited:
+ 
+-The following files were adapted and extended from the original
+-repository, with permission from the author:
++- `01-Preprocessing/01-PreProcessing.py` (from `PreProcessing.py`)
++- `01-Preprocessing/02-Services_new.py` (from `Services.py`)
++- `01-Preprocessing/03-Louvain_new.py` (from `Louvain.py`)
+ 
+--   01-Preprocessing/01-PreProcessing.py
+--   01-Preprocessing/02-Services_new.py
+--   01-Preprocessing/03-Louvain_new.py
++The upstream repository does not declare a license, so these three files are
++**not** covered by the MIT License of this repository: they are shared for
++academic and research reuse, as authorized, and keep the rights of their
++original authors.
+ 
+-These components were modified to support dependency-aware feature
+-enrichment and integration with the latency prediction framework
+-developed in this research.
+-
+-All additional graph feature integration logic, data enrichment
+-mechanisms, and latency modeling components were independently developed
+-as part of this thesis.
+-
+-------------------------------------------------------------------------
++All additional graph feature integration logic, data enrichment mechanisms
++and latency modeling components were developed as part of this thesis. See
++`NOTICE.md` for details.
+ 
+-## Research Purpose
++## License
+ 
+-This repository is intended for academic and research purposes. It
+-provides a reproducible implementation of a graph-enriched preprocessing
+-pipeline for latency prediction in cloud microservice environments.
++Released under the MIT License (see `LICENSE`), except for the three files
++derived from third-party code listed in the Acknowledgment.
+diff --git a/README.md.bak b/README.md.bak
+deleted file mode 100644
+index ee2576f..0000000
+--- a/README.md.bak
++++ /dev/null
+@@ -1,64 +0,0 @@
+-# graph-aware-latency-prediction
+-
+-A graph-aware preprocessing framework that enriches cloud microservice
+-telemetry with dependency topology features to improve latency
+-prediction models.
+-
+-------------------------------------------------------------------------
+-
+-## Overview
+-
+-This repository implements a dependency-graph--based feature engineering
+-pipeline for cloud-deployed microservice architectures. The framework
+-constructs service interaction graphs and extracts topology-aware
+-metrics (e.g., centrality measures and community detection) to enrich
+-telemetry data prior to latency prediction.
+-
+-The main contribution of this work is the integration of structural
+-dependency information into the preprocessing stage, enabling
+-graph-enriched latency modeling in distributed microservice systems.
+-
+-This repository accompanies the master's thesis:
+-
+-**Artificial Intelligence Model for Latency Prediction in Cloud-Deployed
+-Microservice Architectures**
+-
+-------------------------------------------------------------------------
+-
+-## Acknowledgment
+-
+-Parts of the preprocessing pipeline were adapted and extended from the
+-implementation developed in the context of the ACM/SPEC International
+-Conference on Performance Engineering (Companion), 2024.
+-
+-Associated publication:
+-
+-Khodabandeh, G., Ezaz, A., & Ezzati-Jivan, N. (2024).\
+-*Network Analysis of Microservices: A Case Study on Alibaba Production
+-Clusters.*\
+-Companion of the 15th ACM/SPEC International Conference on Performance
+-Engineering, pp. 67--71.
+-
+-
+-The following files were adapted and extended from the original
+-repository, with permission from the author:
+-
+--   01-Preprocessing/01-PreProcessing.py
+--   01-Preprocessing/02-Services_new.py
+--   01-Preprocessing/03-Louvain_new.py
+-
+-These components were modified to support dependency-aware feature
+-enrichment and integration with the latency prediction framework
+-developed in this research.
+-
+-All additional graph feature integration logic, data enrichment
+-mechanisms, and latency modeling components were independently developed
+-as part of this thesis.
+-
+-------------------------------------------------------------------------
+-
+-## Research Purpose
+-
+-This repository is intended for academic and research purposes. It
+-provides a reproducible implementation of a graph-enriched preprocessing
+-pipeline for latency prediction in cloud microservice environments.
+diff --git a/requirements.txt b/requirements.txt
+new file mode 100644
+index 0000000..a6e3e73
+--- /dev/null
++++ b/requirements.txt
+@@ -0,0 +1,15 @@
++# Dependencies inferred from the imports in the scripts and the notebook.
++# The authors' notebook reports Python 3.11.5; exact package versions were not
++# recorded in the repository. Pin them (pip freeze) once a run is reproduced.
++numpy
++pandas
++matplotlib
++networkx
++python-louvain      # provides the `community` module used in 03-Louvain_new.py
++scikit-learn
++xgboost
++joblib
++shap
++tensorflow          # includes keras (used by train_lstm.py and the notebook)
++ipywidgets          # 03-Interpretability/lstm_shap_lstm.ipynb
++jupyter

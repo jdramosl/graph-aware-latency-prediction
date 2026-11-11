@@ -1,0 +1,15 @@
+# Dependencies inferred from the imports in the scripts and the notebook.
+# The authors' notebook reports Python 3.11.5; exact package versions were not
+# recorded in the repository. Pin them (pip freeze) once a run is reproduced.
+numpy
+pandas
+matplotlib
+networkx
+python-louvain      # provides the `community` module used in 03-Louvain_new.py
+scikit-learn
+xgboost
+joblib
+shap
+tensorflow          # includes keras (used by train_lstm.py and the notebook)
+ipywidgets          # 03-Interpretability/lstm_shap_lstm.ipynb
+jupyter
